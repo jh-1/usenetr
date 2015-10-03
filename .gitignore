@@ -1,0 +1,11 @@
+*
+!.gitignore
+!*.c
+!*.h
+!*.inc
+!*.nasm
+!*.py
+!makefile
+!readme.txt
+!doc
+!doc/**

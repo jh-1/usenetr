@@ -1,0 +1,36 @@
+Usenetr Data Model
+
+Collection
+  Collection name (blank means default)
+  List of accounts (primary and alternates)
+  List of newsgroups subscribed to
+
+Account
+  List of servers (primary and backups)
+  User's name and credentials
+  List of newsgroups available
+  Datetime when list of newsgroups available was last updated
+
+Account newsgroups
+  Newsgroup name
+  Latest downloaded or other info from each account
+
+Message info
+  Message id
+  Account sourced from
+  Validity: extant, deleted, never seen
+  Sender
+  Subject
+  Datetime GMT
+  Lines
+  Bytes
+
+Message content
+  Message id (& possibly other detail to make unique)
+  Raw content
+
+Newsgroup messages (per newsgroup)
+  Message id
+  Tags: viewed, watched, flagged etc
+  Reply level, 0 for initial message
+
