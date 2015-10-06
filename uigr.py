@@ -96,31 +96,34 @@ class Window(object):
     self._title = title
     self._menus = []
     self._impl = None  # Implementation
-    self._parent = None
+    self._app = None
 
-  def destroy(self):
+  def quit(self):
     if self._impl:
       self._impl.destroy()
-    if self._parent:
-      self._parent.window_remove(self)
+    if self._app:
+      self._app.window_remove(self)
 
   def menu_add(self, menu):
     self._menus.append(menu)
 
-  def implement(self, parent):
+  def implement(self, app):
     'Implement the elements of the window'
-    self._parent = parent
+    self._app = app
     self._impl = tk.Toplevel()
     self._impl.wm_title(self._title)
-    self._impl.protocol(name = 'WM_DELETE_WINDOW', func = self.destroy)
+    self._impl.protocol(name = 'WM_DELETE_WINDOW', func = self.quit)
 
     if len(self._menus) > 1:
       raise ValueError, 'Have %s menus instead or 0 or 1.' % len(self._menus)
 
     if len(self._menus) == 1:
 #      print ' _menus[0] =', self._menus[0]
-      menubar = self._menus[0].make()  # Just the first menu
-      self._impl.config(menu = menubar)
+      menubar = self._menus[0].make(self)  # Just the first menu
+      self._impl.config(menu=menubar)
+
+  def app_get(self):
+    return self._app
 
 
 #******************************************************************************
@@ -132,14 +135,15 @@ class Window(object):
 class Action(object):
   'An action that a UI element can cause'
 
-  def __init__(self, label, selector_offset,
-       desc = '', action = None, parms = None, icon = None):
+  def __init__(self, label, selector_offset=-1, desc='', icon=None,
+       action=None, parms=None, domain=None):
     self.label  = label
     self.seloff = selector_offset
     self.desc   = desc
     self.action = action
     self.parms  = parms
     self.icon   = icon
+    self.domain = domain
 
 
 #******************************************************************************
@@ -161,18 +165,23 @@ class Menu(object):
   def menu_add(self, menu):
     self._entries.append(('m', menu))
 
-  def make(self):
-    print ' menumake', self.label, '##', self._entries
-    menu = tk.Menu(tearoff=False)
+  def make(self, window):
+#    print ' menumake', self.label, '====', self._entries
+    app = window.app_get()
+    idict = {'app': app, 'window': window}  # Information for commands
+    menu = tk.Menu() ##window, tearoff=False)
     for entry in self._entries:
       if len(entry) != 2:
         raise ValueError, \
            'Internal error: entry %r has to be two elements' % entry
       etype, submenu = entry
+      print ' got etype, submenu as', etype, submenu
       if etype == 'm':  # Another menu
-        menu.add_cascade(label=submenu.label, menu=submenu.make())
+        menu.add_cascade(label=submenu.label, menu=submenu.make(window))
       elif etype == 'a':  # Action
-        menu.add_command(label=submenu.label, command=submenu.action)
+        print ' add_command(label=%r, command=%r)' % (submenu.label,
+           submenu.action)
+        menu.add_command(label=submenu.label, command=submenu.action(idict))
       else:
         raise ValueError, \
            'Internal error: entry type %r not recognised' % etype
@@ -198,9 +207,10 @@ if __name__ == '__main__':
 
   # Set up the app's actions
   new_action   = ui.Action('New',   -1, desc = 'Create a new document')
-  close_action = ui.Action('Close', -1, desc = 'Close this window')
+  close_action = ui.Action('Close', -1, desc = 'Close this window',
+      action='winquit')
   exit_action  = ui.Action('Exit',  -1, desc = 'Quit the application',
-      action=quit)
+      action='appquit')
   cut_action   = ui.Action('Cut',   -1, desc = 'Cut to clipboard')
   copy_action  = ui.Action('Copy',  -1, desc = 'Copy to clipboard')
   paste_action = ui.Action('Paste', -1, desc = 'Paste from clipboard')
@@ -229,8 +239,16 @@ if __name__ == '__main__':
   app = ui.App()
   app.window_add(win0)
 
+
+  win1 = ui.Window(title='win1')
+  win1.menu_add(window_menu)
+  app.window_add(win1)
+
+
   # Make the UI real
   app.implement()
 
   # Pass control to the windowing system
   response = app.interact()
+
+
