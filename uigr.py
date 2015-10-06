@@ -234,6 +234,8 @@ if __name__ == '__main__':
   # Add the content to a new window
   win0 = ui.Window(title = 'win0')
   win0.menu_add(window_menu)
+#  win0.action_add(close_action)
+#  win0.action_add(exit_action)
 
   # Add the window to a new app
   app = ui.App()
@@ -243,6 +245,16 @@ if __name__ == '__main__':
   win1 = ui.Window(title='win1')
   win1.menu_add(window_menu)
   app.window_add(win1)
+
+
+
+  # Bind actions to receivers
+  ui.Bind(win0.close_action, win0, close)
+  ui.Bind(win1.close_action, win1, close)
+  ui.Bind(win0.exit_action, app, quit)
+  ui.Bind(win1.exit_action, app, quit)
+
+
 
 
   # Make the UI real
